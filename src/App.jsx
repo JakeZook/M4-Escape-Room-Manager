@@ -1,15 +1,23 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import { Home, BB, CH, ET, SP, VH } from "./comp";
+
 import "./App.css";
 
-function App() {
+const App = () => {
 	return (
-		<>
-			<header className="text-accent text-3xl"> M4 </header>
-			<h2 className="text-secondary">Mythic Mystery Mastery Monstrosity</h2>
-		</>
+		<Router>
+			<Routes>
+				<Route path="/" element={<Home />} />
+				<Route path="/BB" element={<BB />} />
+				<Route path="/CH" element={<CH />} />
+				<Route path="/ET" element={<ET />} />
+				<Route path="/SP" element={<SP />} />
+				<Route path="/VH" element={<VH />} />
+			</Routes>
+		</Router>
 	);
-}
+};
 
 export default App;
