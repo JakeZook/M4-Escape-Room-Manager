@@ -4,11 +4,44 @@ const BB = () => {
 	const objectives = [
 		{
 			name: "Message in a Bottle - 8367",
-			weight: 1,
 			hints: [
 				"What is Kidd holding?",
 				"What does the bottle message say? Does anything stand out?",
 				"What on that note stands out? Fortune favors a bold pirate.",
+			],
+		},
+		{
+			name: "Scratchy Compass - RATS",
+			hints: [
+				`You're close to answering Kidd's final riddle. These "PEST" creep out even the toughest of pirates. Do you see any in the brig?`,
+			],
+		},
+		{
+			name: "Message in a Bottle - 8367",
+			hints: [
+				"What is Kidd holding?",
+				"What does the bottle message say? Does anything stand out?",
+				"What on that note stands out? Fortune favors a bold pirate.",
+			],
+		},
+		{
+			name: "Scratchy Compass - RATS",
+			hints: [
+				`You're close to answering Kidd's final riddle. These "PEST" creep out even the toughest of pirates. Do you see any in the brig?`,
+			],
+		},
+		{
+			name: "Message in a Bottle - 8367",
+			hints: [
+				"What is Kidd holding?",
+				"What does the bottle message say? Does anything stand out?",
+				"What on that note stands out? Fortune favors a bold pirate.",
+			],
+		},
+		{
+			name: "Scratchy Compass - RATS",
+			hints: [
+				`You're close to answering Kidd's final riddle. These "PEST" creep out even the toughest of pirates. Do you see any in the brig?`,
 			],
 		},
 	];
@@ -16,6 +49,12 @@ const BB = () => {
 	const [gameState, setGameState] = useState("Idle");
 	const [secondTimer, setSecondTimer] = useState(0);
 	const [minuteTimer, setMinuteTimer] = useState(60);
+	const [hints, setHints] = useState(0);
+	const [progress, setProgress] = useState(0);
+	const [toggleObj, setToggleObj] = useState(objectives.map(() => true));
+	const [toggleHints, setToggleHints] = useState(
+		objectives.map((objective) => objective.hints.map(() => true))
+	);
 
 	useEffect(() => {
 		let intervalId;
@@ -41,11 +80,23 @@ const BB = () => {
 		}
 	}, [secondTimer, gameState]);
 
+	useEffect(() => {
+		if (progress === 100) {
+			setGameState("Ended");
+		}
+	}, [progress]);
+
 	const handleStart = () => {
 		if (gameState === "Ended") {
 			setGameState("Idle");
 			setSecondTimer(0);
 			setMinuteTimer(60);
+			setHints(0);
+			setProgress(0);
+			setToggleObj(objectives.map(() => true));
+			setToggleHints(
+				objectives.map((objective) => objective.hints.map(() => true))
+			);
 		} else {
 			setGameState("Running");
 		}
@@ -83,9 +134,46 @@ const BB = () => {
 		}
 	};
 
+	const handleOpenHints = () => {
+		const path = "/BB/Hint-Screen";
+
+		const url = window.location.origin + path;
+
+		window.open(url, "_blank", "noopener,noreferrer,width=600,height=400");
+	};
+
+	const toggleObjective = (index) => {
+		if (gameState === "Running" || gameState === "Paused") {
+			setToggleObj((prevStates) => {
+				const newStates = [...prevStates];
+				newStates[index] = !newStates[index];
+
+				const completedObjectives = newStates.filter((obj) => !obj).length;
+				const totalObjectives = newStates.length;
+				const newProgress = Math.round(
+					(completedObjectives / totalObjectives) * 100
+				);
+				setProgress(newProgress);
+
+				return newStates;
+			});
+		} else return;
+	};
+
+	const updateHints = (hint, hintIndex, objIndex) => {
+		if (gameState === "Running" || gameState === "Paused") {
+			setHints((prevHints) => prevHints + 1);
+			setToggleHints((prevHints) => {
+				const newHints = [...prevHints];
+				newHints[objIndex][hintIndex] = false;
+				return newHints;
+			});
+		} else return;
+	};
+
 	return (
-		<div className="flex flex-row">
-			<div className="card bg-primary shadow-xl p-2">
+		<div className="flex flex-row justify-around">
+			<div className="card bg-primary shadow-xl p-2 mx-2 w-80">
 				<figure className="bg-base-100">
 					<h1 className="text-cyan-300 text-3xl p-2">Blackbeard's Brig</h1>
 				</figure>
@@ -108,12 +196,12 @@ const BB = () => {
 							+
 						</button>
 					</div>
-					<div className="bg-base-100 w-3/4 flex justify-center mt-5">
+					<div className="bg-base-100 w-3/4 flex justify-center mt-5 badge p-5">
 						<h2 className={`card-title ${getStateColor()} text-2xl p-2`}>
 							{gameState}
 						</h2>
 					</div>
-					<div className="card-actions mt-5 flex flex-col items-center">
+					<div className="card-actions my-5 flex flex-col items-center">
 						<button
 							onClick={() => handleStart()}
 							disabled={
@@ -148,67 +236,162 @@ const BB = () => {
 							End
 						</button>
 					</div>
-					<div className="bg-base-100 w-full flex justify-center flex-col items-center p-2 mt-3">
-						<h2 className="text-2xl text-accent">Clues: 5</h2>
+					<div className="bg-base-100 w-full h-32 flex justify-center flex-col items-center p-2 mt-5 badge">
+						<h2 className="text-2xl text-accent">Hints: {hints}</h2>
 						<h2 className="card-title text-warning text-2xl p-2">
-							Progress: 50%
+							Progress: {progress}%
 						</h2>
 						<progress
 							className="progress progress-success w-56"
-							value={50}
+							value={progress}
 							max="100"
 						></progress>
 					</div>
 				</div>
 			</div>
-			<div className="card bg-primary shadow-xl p-2 mx-5">
+			<div
+				className="card bg-primary shadow-xl p-2 mx-2"
+				style={styles.objContainer}
+			>
 				<figure className="bg-base-100">
 					<h1 className="text-cyan-300 text-3xl p-2">Objectives</h1>
 				</figure>
-				<div className="card-body items-center">
-					{objectives.map((objective) => (
-						<div
-							key={objective.name}
-							className="flex items-center flex-col bg-accent"
-						>
-							<h2 className="card-title text-md p-2 text-white mb-2">
-								{objective.name}
-							</h2>
-							<div className="bg-base-100">
-								{objective.hints.map((hint) => (
-									<div className="flex flex-row items-center">
-										<p
-											key={hint}
-											className="text-sm text-white p-2 items-start text-left"
-										>
-											{hint}
-										</p>
-										<button className="btn btn-circle">
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												className="h-6 w-6"
-												fill="none"
-												viewBox="0 0 24 24"
-												stroke="currentColor"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth="2"
-													d="M6 18L18 6M6 6l12 12"
-												/>
-											</svg>
-										</button>
-									</div>
-								))}
+				<div
+					className="overflow-y-scroll no-scrollbar"
+					style={styles.objectives}
+				>
+					{objectives.map((objective, index) => (
+						<div key={index} className="card-bod m-2.5 flex flex-col">
+							<div className="flex items-center justify-between">
+								<h2
+									className={`card-title text-2xl text-white justify-between w-full px-2 ${
+										toggleObj[index] ? `bg-error` : `bg-success`
+									}`}
+								>
+									{objective.name}
+									<input
+										type="checkbox"
+										className="toggle toggle-md"
+										checked={toggleObj[index]}
+										onChange={() => toggleObjective(index)}
+									/>
+								</h2>
 							</div>
+							{toggleObj[index] && (
+								<div className="flex flex-col">
+									{objective.hints.map((hint, hintIndex) => (
+										<div
+											key={hintIndex}
+											className="text-white bg-base-300 flex flex-row justify-between border-b-2 border-accent items-center"
+										>
+											<p
+												onClick={() => updateHints(hint, hintIndex, index)}
+												className={`p-2 text-left cursor-pointer ${
+													toggleHints[index][hintIndex]
+														? `text-white`
+														: `text-gray-500`
+												}`}
+											>
+												{hint}
+											</p>
+										</div>
+									))}
+								</div>
+							)}
 						</div>
 					))}
 				</div>
+				<div
+					className="flex flex-row justify-center"
+					style={styles.msgContainer}
+				>
+					<textarea
+						className="textarea textarea-info w-full bg-base-300 mr-2 text-xl"
+						placeholder="Type your message here..."
+					></textarea>
+					<div className="flex flex-col justify-around">
+						<button className="btn btn-success">Send Hint</button>
+						<button className="btn btn-accent">Send Msg</button>
+						<button className="btn btn-error">Clear</button>
+					</div>
+				</div>
 			</div>
-			<div className="bg-primary m-8 p-8 flex-grow">Overrides</div>
+			<div className="card bg-primary shadow-xl p-2 mx-2 w-80">
+				<figure className="bg-base-100">
+					<h1 className="text-cyan-300 text-3xl p-2">Game Master</h1>
+				</figure>
+				<div
+					role="tablist"
+					className="tabs tabs-boxed mt-2"
+					style={styles.tabContainer}
+				>
+					<input
+						type="radio"
+						name="my_tabs_1"
+						role="tab"
+						className="tab"
+						aria-label="Events"
+					/>
+					<div role="tabpanel" className="tab-content p-10">
+						<div className="flex flex-col items-center">
+							<button className="btn btn-info max-w-28 m-2">Hint Screen</button>
+							<button className="btn btn-accent max-w-28 m-2">
+								Music Change
+							</button>
+							<button className="btn btn-success max-w-28 m-2">
+								+5 minutes
+							</button>
+							<button className="btn btn-error max-w-28 m-2">-5 minutes</button>
+						</div>
+					</div>
+
+					<input
+						type="radio"
+						name="my_tabs_1"
+						role="tab"
+						className="tab"
+						aria-label="Overrides"
+					/>
+					<div role="tabpanel" className="tab-content p-10">
+						<div className="flex flex-col items-center">
+							<button className="btn btn-accent max-w-28 m-2">Puzzle 1</button>
+							<button className="btn btn-accent max-w-28 m-2">Puzzle 2</button>
+							<button className="btn btn-accent max-w-28 m-2">puzzle 3</button>
+							<button className="btn btn-accent max-w-28 m-2">puzzle 4</button>
+						</div>
+					</div>
+
+					<input
+						type="radio"
+						name="my_tabs_1"
+						role="tab"
+						className="tab"
+						aria-label="Log"
+					/>
+					<div role="tabpanel" className="tab-content p-10">
+						Tab content 3
+					</div>
+				</div>
+			</div>
 		</div>
 	);
+};
+
+const styles = {
+	objectives: {
+		maxHeight: "450px",
+	},
+	objContainer: {
+		width: "1000px",
+	},
+	msgContainer: {
+		position: "absolute",
+		bottom: "5px",
+		width: "590px",
+	},
+	tabContainer: {
+		maxHeight: "400px",
+	},
 };
 
 export default BB;
