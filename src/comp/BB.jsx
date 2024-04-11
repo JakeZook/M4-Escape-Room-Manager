@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 const BB = () => {
 	const objectives = [
@@ -55,6 +55,17 @@ const BB = () => {
 	const [toggleHints, setToggleHints] = useState(
 		objectives.map((objective) => objective.hints.map(() => true))
 	);
+	const [log, setLog] = useState([]);
+
+	const endOfListRef = useRef(null);
+
+	const scrollToBottom = () => {
+		endOfListRef.current?.scrollIntoView({ behavior: "smooth" });
+	};
+
+	useEffect(() => {
+		scrollToBottom();
+	}, [log]);
 
 	useEffect(() => {
 		let intervalId;
@@ -88,6 +99,7 @@ const BB = () => {
 
 	const handleStart = () => {
 		if (gameState === "Ended") {
+			setLog([]);
 			setGameState("Idle");
 			setSecondTimer(0);
 			setMinuteTimer(60);
@@ -99,27 +111,35 @@ const BB = () => {
 			);
 		} else {
 			setGameState("Running");
+			addLog("Game Started");
 		}
 	};
 	const handlePause = () => {
 		if (gameState === "Paused") {
+			addLog("Game Resumed");
 			setGameState("Running");
 			return;
-		} else setGameState("Paused");
+		} else {
+			addLog("Game Paused");
+			setGameState("Paused");
+		}
 	};
 
 	const handleEnd = () => {
+		addLog("Game Ended");
 		setGameState("Ended");
 	};
 
 	const handleMinus = () => {
 		if (gameState !== "Idle" && gameState !== "Ended") {
+			addLog("Timer manually decreased by 1 minute");
 			setMinuteTimer(minuteTimer - 1);
 		}
 	};
 
 	const handlePlus = () => {
 		if (gameState !== "Idle" && gameState !== "Ended") {
+			addLog("Timer manually increased by 1 minute");
 			setMinuteTimer(minuteTimer + 1);
 		}
 	};
@@ -144,6 +164,10 @@ const BB = () => {
 
 	const toggleObjective = (index) => {
 		if (gameState === "Running" || gameState === "Paused") {
+			if (toggleObj[index] === true) {
+				addLog(`${objectives[index].name} complete`);
+			}
+
 			setToggleObj((prevStates) => {
 				const newStates = [...prevStates];
 				newStates[index] = !newStates[index];
@@ -162,6 +186,7 @@ const BB = () => {
 
 	const updateHints = (hint, hintIndex, objIndex) => {
 		if (gameState === "Running" || gameState === "Paused") {
+			addLog(`Sent: ${hint}`);
 			setHints((prevHints) => prevHints + 1);
 			setToggleHints((prevHints) => {
 				const newHints = [...prevHints];
@@ -169,6 +194,13 @@ const BB = () => {
 				return newHints;
 			});
 		} else return;
+	};
+
+	const addLog = (message) => {
+		setLog((prevLogs) => [
+			...prevLogs,
+			{ message, timestamp: new Date().toLocaleTimeString() },
+		]);
 	};
 
 	return (
@@ -334,10 +366,8 @@ const BB = () => {
 					/>
 					<div role="tabpanel" className="tab-content p-10">
 						<div className="flex flex-col items-center">
+							<button className="btn btn-accent max-w-28 m-2">Chime</button>
 							<button className="btn btn-info max-w-28 m-2">Hint Screen</button>
-							<button className="btn btn-accent max-w-28 m-2">
-								Music Change
-							</button>
 							<button className="btn btn-success max-w-28 m-2">
 								+5 minutes
 							</button>
@@ -369,7 +399,17 @@ const BB = () => {
 						aria-label="Log"
 					/>
 					<div role="tabpanel" className="tab-content p-10">
-						Tab content 3
+						<div className="flex flex-col overflow-y-auto no-scrollbar max-h-72">
+							<ul className="list-disc">
+								{log.map((logEntry, index) => (
+									<li key={index} className="text-white">
+										<span className="text-warning">[{logEntry.timestamp}]</span>{" "}
+										{logEntry.message}
+									</li>
+								))}
+								<div ref={endOfListRef} />
+							</ul>
+						</div>
 					</div>
 				</div>
 			</div>
