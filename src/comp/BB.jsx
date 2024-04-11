@@ -50,18 +50,19 @@ const BB = () => {
 	const [secondTimer, setSecondTimer] = useState(0);
 	const [minuteTimer, setMinuteTimer] = useState(60);
 	const [hints, setHints] = useState(0);
-	const [progress, setProgress] = useState(0);
-	const [toggleObj, setToggleObj] = useState(objectives.map(() => true));
+	const [progress, setProgress] = useState(0); //Progress bar
+	const [toggleObj, setToggleObj] = useState(objectives.map(() => true)); //Map of all objectives
 	const [toggleHints, setToggleHints] = useState(
 		objectives.map((objective) => objective.hints.map(() => true))
-	);
+	); //Map of all hints inside objectives
 	const [log, setLog] = useState([]);
+	const [hintText, setHintText] = useState(""); //Text area for hints
 
-	const endOfListRef = useRef(null);
+	const endOfListRef = useRef(null); //Ref for scrolling to bottom of log
 
 	const scrollToBottom = () => {
 		endOfListRef.current?.scrollIntoView({ behavior: "smooth" });
-	};
+	}; //Function to scroll to bottom of log
 
 	useEffect(() => {
 		scrollToBottom();
@@ -74,7 +75,7 @@ const BB = () => {
 			intervalId = setInterval(() => {
 				setSecondTimer((prevTimer) => prevTimer - 1);
 			}, 1000);
-		}
+		} //Timer for countdown
 
 		return () => clearInterval(intervalId);
 	}, [gameState]);
@@ -83,18 +84,18 @@ const BB = () => {
 		if (secondTimer === 0 && gameState === "Running") {
 			setMinuteTimer(minuteTimer - 1);
 			setSecondTimer(59);
-		}
+		} //Timer for minutes
 		if (minuteTimer === 0 && secondTimer === 0) {
 			setGameState("Ended");
 			setSecondTimer(0);
 			setMinuteTimer(0);
-		}
+		} //End game when timer reaches 0
 	}, [secondTimer, gameState]);
 
 	useEffect(() => {
 		if (progress === 100) {
 			setGameState("Ended");
-		}
+		} //End game when progress reaches 100%
 	}, [progress]);
 
 	const handleStart = () => {
@@ -109,39 +110,41 @@ const BB = () => {
 			setToggleHints(
 				objectives.map((objective) => objective.hints.map(() => true))
 			);
+			setHintText(""); //Reset all values
 		} else {
 			setGameState("Running");
 			addLog("Game Started");
-		}
+		} //Start game
 	};
+
 	const handlePause = () => {
 		if (gameState === "Paused") {
 			addLog("Game Resumed");
 			setGameState("Running");
-			return;
+			return; //Resume game
 		} else {
 			addLog("Game Paused");
-			setGameState("Paused");
+			setGameState("Paused"); //Pause game
 		}
 	};
 
 	const handleEnd = () => {
 		addLog("Game Ended");
-		setGameState("Ended");
+		setGameState("Ended"); //End game
 	};
 
 	const handleMinus = () => {
 		if (gameState !== "Idle" && gameState !== "Ended") {
 			addLog("Timer manually decreased by 1 minute");
 			setMinuteTimer(minuteTimer - 1);
-		}
+		} //Decrease timer by 1 minute
 	};
 
 	const handlePlus = () => {
 		if (gameState !== "Idle" && gameState !== "Ended") {
 			addLog("Timer manually increased by 1 minute");
 			setMinuteTimer(minuteTimer + 1);
-		}
+		} //Increase timer by 1 minute
 	};
 
 	const getStateColor = () => {
@@ -151,7 +154,7 @@ const BB = () => {
 			return "text-green-500";
 		} else if (gameState === "Ended") {
 			return "text-error";
-		}
+		} //Color of game state
 	};
 
 	const handleOpenHints = () => {
@@ -160,7 +163,7 @@ const BB = () => {
 		const url = window.location.origin + path;
 
 		window.open(url, "_blank", "noopener,noreferrer,width=600,height=400");
-	};
+	}; //Open hint screen
 
 	const toggleObjective = (index) => {
 		if (gameState === "Running" || gameState === "Paused") {
@@ -182,11 +185,11 @@ const BB = () => {
 				return newStates;
 			});
 		} else return;
-	};
+	}; //Toggle objectives complete or incomplete
 
 	const updateHints = (hint, hintIndex, objIndex) => {
 		if (gameState === "Running" || gameState === "Paused") {
-			addLog(`Sent: ${hint}`);
+			addLog(`Sent: "${hint}"`);
 			setHints((prevHints) => prevHints + 1);
 			setToggleHints((prevHints) => {
 				const newHints = [...prevHints];
@@ -194,17 +197,56 @@ const BB = () => {
 				return newHints;
 			});
 		} else return;
-	};
+	}; //Toggle hints sent or not sent and increase hint count
 
 	const addLog = (message) => {
 		setLog((prevLogs) => [
 			...prevLogs,
 			{ message, timestamp: new Date().toLocaleTimeString() },
 		]);
-	};
+	}; //Add log message
+
+	const handleChime = () => {
+		console.log("Chime");
+		addLog("Chime played");
+	}; //Play chime
+
+	const handle5 = (operation) => {
+		if (gameState === "Running" || gameState === "Paused") {
+			if (operation === "+") {
+				setMinuteTimer(minuteTimer + 5);
+				addLog("Timer increased by 5 minutes");
+			} else {
+				setMinuteTimer(minuteTimer - 5);
+				addLog("Timer decreased by 5 minutes");
+			}
+		}
+	}; //Increase or decrease timer by 5 minutes
+
+	const handleHintTextChange = (event) => {
+		setHintText(event.target.value);
+	}; //Update hint text
+
+	const handleSendHint = (type) => {
+		if (
+			type === "Hint" &&
+			(gameState === "Running" || gameState === "Paused")
+		) {
+			addLog(`Sent: "${hintText}"`);
+			setHints((prevHints) => prevHints + 1);
+		} else if (
+			type === "Msg" &&
+			(gameState === "Running" || gameState === "Paused")
+		) {
+			addLog(`Sent: "${hintText}"`);
+		} else {
+			console.log("cleared");
+		}
+		setHintText("");
+	}; //Send hint or message
 
 	return (
-		<div className="flex flex-row justify-around">
+		<div className="flex flex-row justify-around max-sm:flex-col max-sm:items-center">
 			<div className="card bg-primary shadow-xl p-2 mx-2 w-80">
 				<figure className="bg-base-100">
 					<h1 className="text-cyan-300 text-3xl p-2">Blackbeard's Brig</h1>
@@ -282,7 +324,7 @@ const BB = () => {
 				</div>
 			</div>
 			<div
-				className="card bg-primary shadow-xl p-2 mx-2"
+				className="card bg-primary shadow-xl p-2 mx-2 max-sm:mt-5 max-sm:w-5"
 				style={styles.objContainer}
 			>
 				<figure className="bg-base-100">
@@ -333,18 +375,32 @@ const BB = () => {
 						</div>
 					))}
 				</div>
-				<div
-					className="flex flex-row justify-center"
-					style={styles.msgContainer}
-				>
+				<div className="flex flex-row justify-center">
 					<textarea
 						className="textarea textarea-info w-full bg-base-300 mr-2 text-xl"
 						placeholder="Type your message here..."
+						value={hintText}
+						onChange={handleHintTextChange}
 					></textarea>
 					<div className="flex flex-col justify-around">
-						<button className="btn btn-success">Send Hint</button>
-						<button className="btn btn-accent">Send Msg</button>
-						<button className="btn btn-error">Clear</button>
+						<button
+							onClick={() => handleSendHint("Hint")}
+							className="btn btn-success"
+						>
+							Send Hint
+						</button>
+						<button
+							onClick={() => handleSendHint("Msg")}
+							className="btn btn-accent"
+						>
+							Send Msg
+						</button>
+						<button
+							onClick={() => handleSendHint("Clear")}
+							className="btn btn-error"
+						>
+							Clear
+						</button>
 					</div>
 				</div>
 			</div>
@@ -366,12 +422,30 @@ const BB = () => {
 					/>
 					<div role="tabpanel" className="tab-content p-10">
 						<div className="flex flex-col items-center">
-							<button className="btn btn-accent max-w-28 m-2">Chime</button>
-							<button className="btn btn-info max-w-28 m-2">Hint Screen</button>
-							<button className="btn btn-success max-w-28 m-2">
+							<button
+								onClick={() => handleChime()}
+								className="btn btn-accent max-w-28 m-2"
+							>
+								Chime
+							</button>
+							<button
+								onClick={() => handleOpenHints()}
+								className="btn btn-info max-w-28 m-2"
+							>
+								Hint Screen
+							</button>
+							<button
+								onClick={() => handle5("+")}
+								className="btn btn-success max-w-28 m-2"
+							>
 								+5 minutes
 							</button>
-							<button className="btn btn-error max-w-28 m-2">-5 minutes</button>
+							<button
+								onClick={() => handle5("-")}
+								className="btn btn-error max-w-28 m-2"
+							>
+								-5 minutes
+							</button>
 						</div>
 					</div>
 
@@ -423,11 +497,6 @@ const styles = {
 	},
 	objContainer: {
 		width: "1000px",
-	},
-	msgContainer: {
-		position: "absolute",
-		bottom: "5px",
-		width: "590px",
 	},
 	tabContainer: {
 		maxHeight: "400px",
